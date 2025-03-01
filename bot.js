@@ -1,30 +1,34 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+const makeWASocket = require("@whiskeysockets/baileys").default;
+const { useMultiFileAuthState, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
 
-const client = new Client({
-  authStrategy: new LocalAuth(),
-  puppeteer: { headless: true }
-});
+async function startBot() {
+    const { state, saveCreds } = await useMultiFileAuthState("./session");
 
-client.on('qr', qr => {
-  qrcode.generate(qr, { small: true });
-  console.log('Scan the QR code above with your phone.');
-});
+    const { version } = await fetchLatestBaileysVersion();
+    
+    const sock = makeWASocket({
+        version,
+        auth: state
+    });
 
-client.on('authenticated', () => {
-  console.log('Successfully authenticated!');
-});
+    sock.ev.on("creds.update", saveCreds);
 
-client.on('ready', () => {
-  console.log('NINA is online and ready!');
-});
+    sock.ev.on("connection.update", async (update) => {
+        const { connection } = update;
 
-client.on('message', message => {
-  console.log(`Received: ${message.body}`);
+        if (connection === "open") {
+            console.log("✅ NINA is connected!");
+        } else if (connection === "close") {
+            console.log("❌ Connection closed. Restarting...");
+            startBot();
+        }
+    });
 
-  if (message.body.toLowerCase() === 'hello') {
-    message.reply('Hello! I am NINA, your WhatsApp bot.');
-  }
-});
+    // Generate Pairing Code
+    const phoneNumber = "YOUR_PHONE_NUMBER_HERE"; // Replace with your number
+    const code = await sock.requestPairingCode(phoneNumber);
+    console.log(`🔑 Your Pairing Code: ${code}`);
+    console.log("Enter this code on WhatsApp Web to connect.");
+}
 
-client.initialize();
+startBot();
