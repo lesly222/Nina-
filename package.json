@@ -1,0 +1,13 @@
+{
+  "name": "nina-whatsapp-bot",
+  "version": "1.0.0",
+  "description": "A WhatsApp bot named NINA using whatsapp-web.js",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "whatsapp-web.js": "^1.21.0",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
